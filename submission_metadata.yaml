@@ -1,0 +1,52 @@
+# Fill in the TODO values before portal upload.
+team_name: "RightWing"
+
+primary_contact:
+  name: "Aarav Gupta"
+  email: "aarav06gupta@gmail.com"
+  phone: "+91 8800139189"
+
+team_members:
+  - name: "Aarav Gupta"
+    email: "aarav06gupta@gmail.com"
+    role: "Solo participant / ML Engineer"
+
+github_repo: "https://github.com/aarav06gupta/redrob-recruiter-lens"
+sandbox_link: "https://TODO-sandbox-link"
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./submission.csv"
+
+compute:
+  platform: "Local CPU"
+  cpu_cores: 8
+  ram_gb: 16
+  python_version: "3.11"
+  os: "Windows"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: false
+  pre_computation_time_minutes: 0
+
+ai_tools_used:
+  - "ChatGPT / Codex"
+
+ai_usage_summary: |
+  Used ChatGPT / Codex for architecture discussion, implementation assistance,
+  code review, and documentation. The ranking code itself makes no LLM or hosted
+  API calls during inference, and no candidate data is sent to external services
+  by the submitted ranker.
+
+methodology_summary: |
+  Deterministic recruiter-lens ranker for the Senior AI Engineer JD. It scores
+  career evidence for shipped search, retrieval, ranking, recommendation, and
+  production ML systems; trust-weights skills by proficiency, duration,
+  endorsements, and assessment scores; adds product-company, logistics, and
+  behavioral availability signals; and applies risk gates for keyword stuffing,
+  services-only careers, pure CV/speech/research profiles, and honeypot-style
+  impossibilities. Runs locally on CPU with no network or GPU.
+
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true
