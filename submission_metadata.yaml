@@ -40,9 +40,11 @@ methodology_summary: |
   career evidence for shipped search, retrieval, ranking, recommendation, and
   production ML systems; trust-weights skills by proficiency, duration,
   endorsements, and assessment scores; adds product-company, logistics, and
-  behavioral availability signals; and applies risk gates for keyword stuffing,
-  services-only careers, pure CV/speech/research profiles, and honeypot-style
-  impossibilities. Runs locally on CPU with no network or GPU.
+  behavioral availability signals including recruiter response quality; uses a
+  calibrated confidence curve to avoid artificial perfect scores; and applies
+  risk gates for keyword stuffing, services-only careers, pure CV/speech/research
+  profiles, and honeypot-style impossibilities. Runs locally on CPU with no
+  network or GPU.
 
 declarations:
   read_submission_spec: true

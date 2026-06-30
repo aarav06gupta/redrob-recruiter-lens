@@ -8,6 +8,26 @@ from typing import Iterable
 
 
 REFERENCE_DATE = date(2026, 6, 1)
+DISPLAY_SCORE_STEP = 0.000001
+
+# The weights below are intentionally plain. In a real recruiter conversation,
+# these are the knobs we would debate and tune with hiring feedback.
+SCORING_WEIGHTS = {
+    "career": 0.29,
+    "role": 0.17,
+    "skill": 0.14,
+    "experience": 0.13,
+    "company": 0.10,
+    "logistics": 0.07,
+    "behavior": 0.10,
+}
+
+SYNERGY_BONUSES = {
+    "career_in_band": 0.035,
+    "role_and_skills": 0.025,
+    "product_and_location": 0.015,
+    "high_availability": 0.015,
+}
 
 PROFICIENCY = {
     "beginner": 0.35,
@@ -335,6 +355,16 @@ def clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return min(hi, max(lo, value))
 
 
+def calibrated_score(raw_signal: float) -> float:
+    """Convert scorer evidence into a readable 0-1 confidence score.
+
+    A hard clamp made many excellent candidates display as 1.000000, which hid
+    meaningful differences. A logistic curve keeps order, avoids saturation,
+    and still reads naturally as confidence.
+    """
+    return clamp(1.0 / (1.0 + math.exp(-7.0 * (raw_signal - 0.5))))
+
+
 def parse_date(value: str | None) -> date | None:
     if not value:
         return None
@@ -639,17 +669,17 @@ def behavior_fit(candidate: dict) -> float:
     )
 
     return clamp(
-        0.2 * recency
-        + 0.2 * response
-        + 0.1 * response_speed
-        + 0.12 * open_to_work
+        0.18 * recency
+        + 0.19 * response
+        + 0.09 * response_speed
+        + 0.11 * open_to_work
         + 0.12 * notice_score
         + 0.08 * github_score
-        + 0.07 * profile_complete
+        + 0.06 * profile_complete
         + 0.05 * interview
         + 0.03 * offer_score
         + 0.03 * verified
-        + 0.0 * recruiter_pull
+        + 0.06 * recruiter_pull
     )
 
 
@@ -743,28 +773,30 @@ def score_candidate(candidate: dict) -> CandidateScore:
     beh_fit = behavior_fit(candidate)
     risk, flags = risk_penalty(candidate, career_fit, role_fit, skill_counts, career_details)
 
-    base = (
-        0.29 * career_fit
-        + 0.17 * role_fit
-        + 0.14 * skill_fit
-        + 0.13 * exp_fit
-        + 0.1 * comp_fit
-        + 0.07 * log_fit
-        + 0.1 * beh_fit
+    evidence_score = (
+        SCORING_WEIGHTS["career"] * career_fit
+        + SCORING_WEIGHTS["role"] * role_fit
+        + SCORING_WEIGHTS["skill"] * skill_fit
+        + SCORING_WEIGHTS["experience"] * exp_fit
+        + SCORING_WEIGHTS["company"] * comp_fit
+        + SCORING_WEIGHTS["logistics"] * log_fit
+        + SCORING_WEIGHTS["behavior"] * beh_fit
     )
 
     synergy = 0.0
     if career_fit > 0.7 and 5 <= float(profile.get("years_of_experience") or 0) <= 9:
-        synergy += 0.035
+        synergy += SYNERGY_BONUSES["career_in_band"]
     if role_fit > 0.75 and skill_fit > 0.45:
-        synergy += 0.025
+        synergy += SYNERGY_BONUSES["role_and_skills"]
     if comp_fit > 0.68 and log_fit > 0.68:
-        synergy += 0.015
+        synergy += SYNERGY_BONUSES["product_and_location"]
     if beh_fit > 0.72:
-        synergy += 0.015
+        synergy += SYNERGY_BONUSES["high_availability"]
 
-    raw_score = clamp(base + synergy - risk)
-    final_score = cap_for_missing_evidence(raw_score, career_fit, role_fit, log_fit, flags)
+    raw_score = evidence_score + synergy - risk
+    final_score = cap_for_missing_evidence(
+        calibrated_score(raw_score), career_fit, role_fit, log_fit, flags
+    )
     top_evidence = career_evidence + skill_evidence[:3]
     diagnostics = {
         "title": profile.get("current_title", ""),
@@ -778,6 +810,8 @@ def score_candidate(candidate: dict) -> CandidateScore:
         "logistics_fit": log_fit,
         "behavior_fit": beh_fit,
         "risk_penalty": risk,
+        "evidence_score": evidence_score,
+        "raw_score": raw_score,
         "risk_flags": flags,
         "top_evidence": top_evidence,
         "skill_counts": skill_counts,
@@ -845,7 +879,7 @@ def rank_candidates(candidates: Iterable[dict], top_k: int = 100) -> list[Ranked
     for rank, item in enumerate(scored[:top_k], start=1):
         display_score = item.score
         if previous_display_score is not None and display_score >= previous_display_score:
-            display_score = max(0.0, previous_display_score - 0.000001)
+            display_score = max(0.0, previous_display_score - DISPLAY_SCORE_STEP)
         previous_display_score = display_score
         ranked.append(
             RankedCandidate(

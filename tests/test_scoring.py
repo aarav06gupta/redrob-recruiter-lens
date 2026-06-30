@@ -147,6 +147,31 @@ class ScoringTests(unittest.TestCase):
         )
         self.assertLessEqual(score_candidate(impossible).score, 0.18)
 
+    def test_strong_candidate_score_stays_below_perfect(self):
+        strong = candidate(
+            "CAND_0000004",
+            "Senior Machine Learning Engineer",
+            "Built production search, retrieval, ranking, and evaluation systems.",
+            [skill("Information Retrieval"), skill("Learning to Rank"), skill("Python")],
+            [
+                {
+                    "company": "Razorpay",
+                    "title": "Senior Machine Learning Engineer",
+                    "start_date": "2021-01-01",
+                    "end_date": None,
+                    "duration_months": 60,
+                    "is_current": True,
+                    "industry": "Fintech",
+                    "company_size": "1001-5000",
+                    "description": "Owned the ranking layer for a product search system, including learning to rank, NDCG evaluation, and live A/B tests.",
+                }
+            ],
+        )
+
+        score = score_candidate(strong).score
+        self.assertGreater(score, 0.8)
+        self.assertLess(score, 1.0)
+
     def test_ranked_scores_are_monotonic(self):
         rows = [
             candidate(

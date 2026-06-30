@@ -7,6 +7,8 @@ The core idea is a deterministic "recruiter lens" ranker. It does not call any
 hosted LLM or require a GPU during ranking. Instead, it reads each profile like
 a careful recruiter would: career evidence first, skills second, then product
 company context, location/logistics, behavioral availability, and risk signals.
+The final number is a calibrated confidence score, so strong candidates can be
+separated cleanly instead of all flattening into a perfect-looking score.
 
 ## Quick Start
 
@@ -36,7 +38,7 @@ python -m unittest discover -s tests
 
 ## Methodology
 
-The ranker uses five layers:
+The ranker uses six layers:
 
 1. **Career evidence graph** - current and past roles are scored for real
    retrieval, ranking, search, recommendation, evaluation, and production ML
@@ -49,7 +51,10 @@ The ranker uses five layers:
 4. **Behavioral availability** - recent activity, recruiter response rate,
    notice period, open-to-work status, verification, and interview reliability
    adjust practical hireability.
-5. **Risk gates** - keyword stuffing, non-technical current roles, pure
+5. **Score calibration** - weighted evidence and synergy bonuses are passed
+   through a smooth confidence curve, preserving order without pretending the
+   model has absolute certainty.
+6. **Risk gates** - keyword stuffing, non-technical current roles, pure
    research/CV/speech profiles, services-only backgrounds, short-tenure senior
    title chasing, and known company-founding inconsistencies are penalized.
 
@@ -71,7 +76,7 @@ The ranking path uses only the Python standard library:
 - no hidden manual edits
 
 On the provided 100,000-candidate pool, the full ranking run completes in about
-90 seconds in this workspace, comfortably under the 5-minute CPU budget.
+80-90 seconds in this workspace, comfortably under the 5-minute CPU budget.
 
 ## Files
 
